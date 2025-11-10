@@ -2,6 +2,7 @@ from sqlalchemy import Column, Integer, String, DateTime, func
 from app.database import Base
 
 class URL(Base):
+    # crio a tabela urls
     __tablename__ = "urls"
 
     id = Column(Integer, primary_key=True, index=True)
