@@ -1,39 +1,25 @@
-import os
-import redis.asyncio as redis
+import time
+from typing import Optional
 
-# Configurações do Redis via variáveis de ambiente
-REDIS_HOST = os.getenv("REDIS_HOST", "localhost")
-REDIS_PORT = int(os.getenv("REDIS_PORT", 6379))
-REDIS_DB = int(os.getenv("REDIS_DB", 0))
-REDIS_EXPIRE = int(os.getenv("REDIS_EXPIRE", 3600))  # tempo padrão de expiração em segundos
+class CacheItem:
+    def __init__(self, value, ttl: int):
+        self.value = value
+        self.expire_at = time.time() + ttl
 
-# Pool de conexões para melhor performance
-redis_pool = redis.ConnectionPool(host=REDIS_HOST, port=REDIS_PORT, db=REDIS_DB)
-redis_client = redis.Redis(connection_pool=redis_pool)
+class SimpleCache:
+    def __init__(self, ttl: int = 300):
+        self.ttl = ttl
+        self.store = {}
 
-# Função para pegar o cliente Redis (assíncrono)
-async def get_redis():
-    return redis_client
+    def set(self, key, value):
+        self.store[key] = CacheItem(value, self.ttl)
 
-# Função wrapper para gravar no cache
-async def set_cache(key: str, value: str, expire: int = REDIS_EXPIRE):
-    try:
-        await redis_client.set(key, value, ex=expire)
-    except Exception as e:
-        print(f"[Redis] Erro ao gravar chave '{key}': {e}")
-
-# Função wrapper para ler do cache
-async def get_cache(key: str):
-    try:
-        value = await redis_client.get(key)
-        return value
-    except Exception as e:
-        print(f"[Redis] Erro ao ler chave '{key}': {e}")
+    def get(self, key) -> Optional[any]:
+        item = self.store.get(key)
+        if item and item.expire_at > time.time():
+            return item.value
+        elif item:
+            del self.store[key]
         return None
 
-# Função wrapper para deletar do cache
-async def delete_cache(key: str):
-    try:
-        await redis_client.delete(key)
-    except Exception as e:
-        print(f"[Redis] Erro ao deletar chave '{key}': {e}")
+cache = SimpleCache()

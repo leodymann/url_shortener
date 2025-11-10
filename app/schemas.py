@@ -1,16 +1,18 @@
-from pydantic import BaseModel, HttpUrl
+from pydantic import BaseModel
 from typing import Optional
 from datetime import datetime
 
-class URLCreate(BaseModel):
-    original_url: HttpUrl
-
-class URLInfo(BaseModel):
-    id: int
+class URLBase(BaseModel):
     original_url: str
-    short_hash: str
-    created_at: datetime
     user_id: Optional[int] = None
 
+class URLCreate(URLBase):
+    pass
+
+class URLResponse(URLBase):
+    id: int
+    short_hash: str
+    created_at: datetime
+
     class Config:
-        orm_mode=True
+        orm_mode = True
